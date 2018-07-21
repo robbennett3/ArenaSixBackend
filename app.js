@@ -35,7 +35,9 @@ if (mongoURL == null && process.env.DATABASE_SERVICE_NAME) {
 }
 
 mongo.connect(mongoURL, {"useNewUrlParser": "true"}, function(err, conn) {
-	if (err) throw err;
+	if (err) {
+		
+	}
 	db = conn;
 	dbDetails.databaseName = db.databaseName;
 	dbDetails.url = mongoURLLabel;
@@ -80,7 +82,9 @@ mongo.connect(mongoURL, {"useNewUrlParser": "true"}, function(err, conn) {
 			query = { name: data };
 			console.log(query);
 			db.collection("users").find(query).toArray(function(err, res) {
-				if (err) throw err;
+				if (err) {
+					
+				}
 				if (res[0].name == null) {
 					socket.emit('userNotFound', data + ' user does not exist');
 				} else {
@@ -93,7 +97,9 @@ mongo.connect(mongoURL, {"useNewUrlParser": "true"}, function(err, conn) {
 			console.log(data.message);
 			var msgObj = { room: data.room, message: data.message, user: data.user, time: data.timestamp };
 			db.collection("messages").insertOne(msgObj, function(err, res) {
-				if (err) throw err;
+				if (err) {
+					
+				}
 			});
 			io.sockets.in("1").emit('newmsg', data);
 		});
@@ -102,14 +108,18 @@ mongo.connect(mongoURL, {"useNewUrlParser": "true"}, function(err, conn) {
 			socket.join(data.room);
 			obj = { user: data.user, room: data.room };
 			db.collection("userrooms").insertOne(obj, function(err, res) {
-				if (err) throw err;
+				if (err) {
+					
+				}
 			});
 		});
 	
 		socket.on('match', function(data) {
 			var matchUser = "";
 			db.collection("matching").findOne({}, function (err, res) {
-				if (err) throw err;
+				if (err) {
+					
+				}
 				if (res.user != "") {
 					matchUser = res.user;
 				}
@@ -123,7 +133,9 @@ mongo.connect(mongoURL, {"useNewUrlParser": "true"}, function(err, conn) {
 				socket.join("matching");
 				obj = {user: data.user};
 				db.collection("matching").insertOne(obj, function(err, res) {
-					if (err) throw err;
+					if (err) {
+						
+					}
 				});
 			}
 		});
@@ -131,7 +143,9 @@ mongo.connect(mongoURL, {"useNewUrlParser": "true"}, function(err, conn) {
 		socket.on('getconvo', function(data) {
 			query = { room: data.room };
 			db.collection("messages").find(query).toArray(function(err, res) {
-				if (err) throw err;
+				if (err) {
+					
+				}
 				socket.emit("retrievedconvo", res);
 			});
 		});
@@ -139,7 +153,9 @@ mongo.connect(mongoURL, {"useNewUrlParser": "true"}, function(err, conn) {
 		socket.on('getconvosbyuser', function(data) {
 			query = { user: data.user };
 			db.collection("userrooms").find(query).toArray(function(err, res) {
-				if (err) throw err;
+				if (err) {
+				
+				}
 				socket.emit("gotconvosbyuser", res);
 			});
 		});
@@ -147,7 +163,9 @@ mongo.connect(mongoURL, {"useNewUrlParser": "true"}, function(err, conn) {
 		socket.on('getusersbyconvo', function(data) {
 			query = { room: data.room };
 			db.collection("userrooms").find(query).toArray(function(err, res) {
-				if (err) throw err;
+				if (err) {
+					
+				}
 				socket.emit("gotusersbyconvo", res);
 			});
 		});
