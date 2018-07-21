@@ -34,7 +34,7 @@ if (mongoURL == null && process.env.DATABASE_SERVICE_NAME) {
 	}
 }
 
-mongo.connect(mongoUrl, {"useNewUrlParser": "true"}, function(err, conn) {
+mongo.connect(mongoURL, {"useNewUrlParser": "true"}, function(err, conn) {
 	if (err) throw err;
 	db = conn;
 	dbDetails.databaseName = db.databaseName;
