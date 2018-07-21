@@ -113,7 +113,7 @@ mongo.connect(mongoUrl, {"useNewUrlParser": "true"}, function(err, conn) {
 				if (res.user != "") {
 					matchUser = res.user;
 				}
-			}
+			});
 			if (matchUser != "") {
 				roomNo = maxRoomNo + 1;
 				maxRoomNo = roomNo;
