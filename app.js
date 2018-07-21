@@ -3,21 +3,45 @@ var http = require('http').Server(app);
 var bodyParser = require('body-parser');
 var io = require('socket.io')(http);
 var mongo = require('mongodb').MongoClient;
-var mongoUrl = "mongodb://localhost:27017/mydb";
 
 var user1 = "Rob";
 var user2 = "Bonnie";
 var messageString = "";
 
-//app.use(bodyParser.json());
+var port = process.env.PORT || process.env.OPENSHIFT_NODEJS_PORT || 8080;
+var ip = process.env.IP || process.env.OPENSHIFT_NODEJS_IP || '0.0.0.0';
+var mongoURL = process.env.OPENSHIFT_MONGODB_DB_URL || process.env.MONGO_URL;
+var mongoURLLabel = "";
 
-app.get('/', function(req, res) {
-	res.sendFile(__dirname + "/" + "index.html");
-});
+var db = null,
+	dbDetails = new Object();
 
-mongo.connect(mongoUrl, {"useNewUrlParser": "true"}, function(err, db) {
+if (mongoURL == null && process.env.DATABASE_SERVICE_NAME) {
+	var mongoServiceName = process.env.DATABASE_SERVICE_NAME.toUpperCase(),
+	    mongoHost = process.env[mongoServiceName + '_SERVICE_HOST'],
+		mongoPort = process.env[mongoServiceName + '_SERVICE_PORT'],
+		mongoDatabase = process.env[mongoServiceName + '_DATABASE],
+		mongoPassword = process.env[mongoServiceName + '_PASSWORD'],
+		mongoUser = process.env[mongoServiceName + '_USER'];
+		
+	if (mongoHost && mongoPort && mongoDatabase) {
+		mongoURLLabel = mongoURL = 'mongodb://';
+		if (mongoUser && mongoPassword) {
+			mongoURL += mongoUser + ':' + mongoPassword + '@';
+		}
+		mongoURLLabel += mongoHost + ':' + mongoPort + '/' + mongoDatabase;
+		mongoURL += mongoHost + ':' + mongoPort + '/' + mongoDatabase;
+	}
+}
+
+mongo.connect(mongoUrl, {"useNewUrlParser": "true"}, function(err, conn) {
 	if (err) throw err;
-	var dbo = db.db("mydb");
+	db = conn;
+	dbDetails.databaseName = db.databaseName;
+	dbDetails.url = mongoURLLabel;
+	dbDetails.type = 'MongoDB';
+	
+	
 	var query = "";
 	var roomNo = 0;
 	var maxRoomNo = 0;
@@ -55,7 +79,7 @@ mongo.connect(mongoUrl, {"useNewUrlParser": "true"}, function(err, db) {
 			//}
 			query = { name: data };
 			console.log(query);
-			dbo.collection("users").find(query).toArray(function(err, res) {
+			db.collection("users").find(query).toArray(function(err, res) {
 				if (err) throw err;
 				if (res[0].name == null) {
 					socket.emit('userNotFound', data + ' user does not exist');
@@ -68,7 +92,7 @@ mongo.connect(mongoUrl, {"useNewUrlParser": "true"}, function(err, db) {
 		socket.on('msg', function(data) {
 			console.log(data.message);
 			var msgObj = { room: data.room, message: data.message, user: data.user, time: data.timestamp };
-			dbo.collection("messages").insertOne(msgObj, function(err, res) {
+			db.collection("messages").insertOne(msgObj, function(err, res) {
 				if (err) throw err;
 			});
 			io.sockets.in("1").emit('newmsg', data);
@@ -77,14 +101,14 @@ mongo.connect(mongoUrl, {"useNewUrlParser": "true"}, function(err, db) {
 		socket.on('joinRoom', function(data) {
 			socket.join(data.room);
 			obj = { user: data.user, room: data.room };
-			dbo.collection("userrooms").insertOne(obj, function(err, res) {
+			db.collection("userrooms").insertOne(obj, function(err, res) {
 				if (err) throw err;
 			});
 		});
 	
 		socket.on('match', function(data) {
 			var matchUser = "";
-			dbo.collection("matching").findOne({}, function (err, res) {
+			db.collection("matching").findOne({}, function (err, res) {
 				if (err) throw err;
 				if (res.user != "") {
 					matchUser = res.user;
@@ -98,7 +122,7 @@ mongo.connect(mongoUrl, {"useNewUrlParser": "true"}, function(err, db) {
 			} else {
 				socket.join("matching");
 				obj = {user: data.user};
-				dbo.collection("matching").insertOne(obj, function(err, res) {
+				db.collection("matching").insertOne(obj, function(err, res) {
 					if (err) throw err;
 				});
 			}
@@ -106,7 +130,7 @@ mongo.connect(mongoUrl, {"useNewUrlParser": "true"}, function(err, db) {
 		
 		socket.on('getconvo', function(data) {
 			query = { room: data.room };
-			dbo.collection("messages").find(query).toArray(function(err, res) {
+			db.collection("messages").find(query).toArray(function(err, res) {
 				if (err) throw err;
 				socket.emit("retrievedconvo", res);
 			});
@@ -114,7 +138,7 @@ mongo.connect(mongoUrl, {"useNewUrlParser": "true"}, function(err, db) {
 		
 		socket.on('getconvosbyuser', function(data) {
 			query = { user: data.user };
-			dbo.collection("userrooms").find(query).toArray(function(err, res) {
+			db.collection("userrooms").find(query).toArray(function(err, res) {
 				if (err) throw err;
 				socket.emit("gotconvosbyuser", res);
 			});
@@ -122,7 +146,7 @@ mongo.connect(mongoUrl, {"useNewUrlParser": "true"}, function(err, db) {
 		
 		socket.on('getusersbyconvo', function(data) {
 			query = { room: data.room };
-			dbo.collection("userrooms").find(query).toArray(function(err, res) {
+			db.collection("userrooms").find(query).toArray(function(err, res) {
 				if (err) throw err;
 				socket.emit("gotusersbyconvo", res);
 			});

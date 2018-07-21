@@ -2,9 +2,9 @@
   "name": "myapp",
   "version": "1.0.0",
   "description": "myapp",
-  "main": "index.js",
+  "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+	"start": "node app.js"
   },
   "author": "",
   "license": "ISC",
@@ -15,5 +15,14 @@
     "mysql": "^2.15.0",
     "socket.io": "^2.1.1"
   },
-  "devDependencies": {}
+  "devDependencies": {},
+  "engine": {
+	"node": "*",
+	"npm": "*"
+  },
+  "repository": {
+	"type": "git",
+	"url": "https://github.com/robbennett3/ArenaSixBackend"
+  },
+  "homepage": "http://github.com/robbennett3/ArenaSixBackend"
 }
